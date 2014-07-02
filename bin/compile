@@ -71,7 +71,8 @@ chmod a+x ${MONO_CACHE_LOCATION}/mono/bin/mozroots
 
 echo "#!/bin/sh" >> "${LP_DIR}/.nuget/nuget"
 # echo "exec ${MONO_CACHE_LOCATION}/mono/bin/mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
-echo "exec mono --runtime=v4.0.30319 --gc=sgen ${LP_DIR}/.nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
+echo "mono ${LP_DIR}/.nuget/NuGet.exe" >> "${LP_DIR}/.nuget/nuget"
+echo "exec mono --runtime=v4.0.30319 --gc=sgen ~/.local/share/nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
 chmod a+x ${LP_DIR}/.nuget/nuget
 
 ${LP_DIR}/.nuget/nuget restore ${SLN}
