@@ -49,7 +49,7 @@ fi
 
 if [ ! -f "${LP_DIR}/.nuget/NuGet.exe" ]; then
   echo "-----> Fetching fixed NuGet Bootstrapper"
-  NUGET_EXE="http://download-codeplex.sec.s-msft.com/Download/Release?ProjectName=nuget&DownloadId=412077&FileTime=129851621946970000&Build=20911"
+  NUGET_EXE="http://nuget.org/nuget.exe"
   curl -L ${NUGET_EXE} -s -o ${LP_DIR}/.nuget/NuGet.exe
   chmod a+x ${LP_DIR}/.nuget/NuGet.exe
 fi
@@ -71,7 +71,7 @@ chmod a+x ${MONO_CACHE_LOCATION}/mono/bin/mozroots
 
 echo "#!/bin/sh" >> "${LP_DIR}/.nuget/nuget"
 # echo "exec ${MONO_CACHE_LOCATION}/mono/bin/mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
-echo "mono ${LP_DIR}/.nuget/NuGet.exe" >> "${LP_DIR}/.nuget/nuget"
+echo "exec mono ${LP_DIR}/.nuget/NuGet.exe" >> "${LP_DIR}/.nuget/nuget"
 echo "exec mono --runtime=v4.0.30319 --gc=sgen ~/.local/share/nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
 chmod a+x ${LP_DIR}/.nuget/nuget
 
