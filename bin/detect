@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # bin/detect <build-dir>
-
-if [ -f "$( find $1 -maxdepth 2 -iname global.asax )" ]; then
-  echo "ASP.NET" && exit 0
-elif [ -f "$( find $1 -maxdepth 2 -iname *.sln )" ]; then
+if [ -f "$( find $1 -maxdepth 2 -iname *.sln )" ]; then
   echo ".NET" && exit 0
 else
   echo "no" && exit 1
