@@ -19,65 +19,78 @@ function conditional_download() {
   if [ ! -d ${DESTINATION} ]; then
     rm -rf ${DESTINATION}
     mkdir -p ${DESTINATION}
-    echo "-----> Downloading ${DOWNLOAD_URL}"
+    echo "       Downloading ${DOWNLOAD_URL}"
     curl -L ${DOWNLOAD_URL} -s | tar xz -C ${DESTINATION}
   fi
 }
+
 
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
 cd ${BUILD_DIR}
 mkdir -p ${CACHE_DIR}
 
-MONO_CACHE_LOCATION=${CACHE_DIR}/mono-${MONO_VERSION}
-conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${MONO_CACHE_LOCATION}
-
-# TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
-#
-# ln -sFf "${MONO_CACHE_LOCATION}/mono" ${BUILD_DIR}
-
+echo "-----> Finding solution"
 # find a solution file
 SLN=$(find . -maxdepth 1 -iname "*.sln")
 if [ $( echo "${SLN}" | wc -l ) -gt 1 ]; then
-  echo "-----> Too many *.sln files"
+  echo "       Too many *.sln files"
   exit 1
 fi
 
 if [ "${SLN}" == "" ]; then
-  echo "-----> No *.sln file found"
+  echo "       No *.sln file found"
   exit 1
 fi
 
+
+echo "-----> Retrieving dependencies"
+
+MONO_CACHE_LOCATION=${CACHE_DIR}/mono-${MONO_VERSION}
+conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${MONO_CACHE_LOCATION}
+
+cp -r "${MONO_CACHE_LOCATION}/mono" .
+# TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
+# ln -s "$BUILD_DIR/mono" /app
+cp -r "${MONO_CACHE_LOCATION}/mono" /app/.
+
+
 if [ ! -f "${LP_DIR}/.nuget/NuGet.exe" ]; then
-  echo "-----> Fetching fixed NuGet Bootstrapper"
+  echo "       Downloading NuGet"
   NUGET_EXE="http://nuget.org/nuget.exe"
   curl -L ${NUGET_EXE} -s -o ${LP_DIR}/.nuget/NuGet.exe
   chmod a+x ${LP_DIR}/.nuget/NuGet.exe
 fi
 
-echo "-----> Compiling Mono application"
 
-export PATH="${MONO_CACHE_LOCATION}/mono/bin/:${PATH}"
-export LD_LIBRARY_PATH="${MONO_CACHE_LOCATION}/mono/lib/:${LD_LIBRARY_PATH}"
+echo "-----> Compiling Mono application"
+echo "       Preparing build paths"
+export PATH="/app/mono/bin:${PATH}"
+export LD_LIBRARY_PATH="/app/mono/lib:${LD_LIBRARY_PATH}"
 export LP_DIR="${LP_DIR}"
-# Add certs to trust store
+chmod +x mono
+
+echo "       Adding certs to trusted store"
 cp -r ${LP_DIR}/.config ~/.
 cp -r ${LP_DIR}/.config ${BUILD_DIR}/.
+
+echo "       Preparing NuGet directory"
 cp -r ${LP_DIR}/.nuget $(dirname $SLN)/.
-
-
 rm -rf ${LP_DIR}/.nuget/nuget
-chmod a+x ${MONO_CACHE_LOCATION}/mono/bin/mono
-chmod a+x ${MONO_CACHE_LOCATION}/mono/bin/mozroots
 
-echo "#!/bin/sh" >> "${LP_DIR}/.nuget/nuget"
-echo "exec mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
-# echo "exec mono ${LP_DIR}/.nuget/NuGet.exe" >> "${LP_DIR}/.nuget/nuget"
-echo "exec mono --runtime=v4.0.30319 --gc=sgen ${LP_DIR}/.nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
+# which mozroots
+# chmod +x mozroots
+
+echo "       Generating NuGet script"
+echo "#!/bin/bash" >> "${LP_DIR}/.nuget/nuget"
+echo "mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
+echo "mono --runtime=v4.0.30319 --gc=sgen \"${LP_DIR}/.nuget/NuGet.exe\" \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
 chmod a+x ${LP_DIR}/.nuget/nuget
 
+echo "       Restoring NuGet packages"
 ${LP_DIR}/.nuget/nuget restore ${SLN}
 
-xbuild /property:Configuration=Release ${SLN}
+echo "       Building application"
+xbuild /property:Configuration=Release /t:Rebuild ${SLN}
 
 # cp -r ${BUILD_CACHE_LOCATION}* ${BUILD_DIR}
 #
