@@ -25,23 +25,15 @@ function conditional_download() {
 }
 
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
-echo "-----> LP_DIR=${LP_DIR}"
 cd ${BUILD_DIR}
 mkdir -p ${CACHE_DIR}
 
 MONO_CACHE_LOCATION=${CACHE_DIR}/mono-${MONO_VERSION}
 conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${MONO_CACHE_LOCATION}
 
-#echo "       Copying to ."
-#cp -rf "${MONO_CACHE_LOCATION}/mono" . && symlinks -rc .
-#cp "${CACHE_DIR}/NuGet.exe" .
 # TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
 #
 ln -sFf "${CACHE_DIR}/mono" /app
-
-#echo "       Copying to /app/"
-#cp -rf "${MONO_CACHE_LOCATION}/mono" /app/. && symlinks -rc /app/.
-# cp "${CACHE_DIR}/NuGet.exe" /app
 
 # find a solution file
 SLN=$(find . -maxdepth 1 -iname "*.sln")
@@ -72,14 +64,11 @@ cp -r ${LP_DIR}/.config ~/.
 cp -r ${LP_DIR}/.config ${BUILD_DIR}/.
 cp -r ${LP_DIR}/.nuget $(dirname $SLN)/.
 
-# BUILD_CACHE_LOCATION=${CACHE_DIR}/build/
-# mkdir -p ${BUILD_CACHE_LOCATION}
-
 
 rm -rf ${LP_DIR}/.nuget/nuget
 echo "#!/bin/sh" >> "${LP_DIR}/.nuget/nuget"
-echo "exec mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
-echo "exec mono --runtime=v4.0.30319 --gc=sgen ${LP_DIR}/.nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
+echo "mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
+echo "mono --runtime=v4.0.30319 --gc=sgen ${LP_DIR}/.nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
 chmod a+x ${LP_DIR}/.nuget/nuget
 
 ${LP_DIR}/.nuget/nuget restore ${SLN}
@@ -87,28 +76,28 @@ ${LP_DIR}/.nuget/nuget restore ${SLN}
 xbuild /property:Configuration=Release ${SLN}
 
 # cp -r ${BUILD_CACHE_LOCATION}* ${BUILD_DIR}
+#
+# VIEWS=$(find $(dirname ${SLN}) -type d -maxdepth 2 -name 'Views')
+# echo "Search Dir: $(dirname ${SLN})"
+# echo "Views dir: ${VIEWS}"
+# CONTENT=$(find $(dirname ${SLN}) -type d -maxdepth 2 -iname 'Content')
+# SCRIPTS=$(find $(dirname ${SLN}) -type d -maxdepth 2 -iname 'Scripts')
+# FONTS=$(find $(dirname ${SLN}) -type d -maxdepth 2 -iname 'Fonts')
 
-VIEWS=$(find $(dirname ${SLN}) -type d -maxdepth 2 -name 'Views')
-echo "Search Dir: $(dirname ${SLN})"
-echo "Views dir: ${VIEWS}"
-CONTENT=$(find $(dirname ${SLN}) -type d -maxdepth 2 -iname 'Content')
-SCRIPTS=$(find $(dirname ${SLN}) -type d -maxdepth 2 -iname 'Scripts')
-FONTS=$(find $(dirname ${SLN}) -type d -maxdepth 2 -iname 'Fonts')
-
-mkdir -p ${BUILD_DIR}/.profile.d
-cp -n ${LP_DIR}/.profile.d/* ${BUILD_DIR}/.profile.d/
-
-if [ -d "$BUILD_DIR/_PublishedWebsites/" ]; then
-  XSP_CACHE_LOCATION=${CACHE_DIR}/xsp-${XSP_VERSION}
-  conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/xsp-${XSP_VERSION}.tar.gz ${XSP_CACHE_LOCATION}
-  cp -r ${XSP_CACHE_LOCATION}/xsp .
-  cp -r ${XSP_CACHE_LOCATION}/xsp/lib/mono/gac/* ./mono/lib/mono/gac/
-
-  NGINX_CACHE_LOCATION=${CACHE_DIR}/nginx-{NGINX_VERSION}
-  conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/nginx-${NGINX_VERSION}.tar.gz ${NGINX_CACHE_LOCATION}
-  mkdir -p ${BUILD_DIR}/nginx
-  cp ${NGINX_CACHE_LOCATION}/nginx ${BUILD_DIR}/nginx/.
-  cp ${LP_DIR}/nginx/* ${BUILD_DIR}/nginx/.
-fi
+# mkdir -p ${BUILD_DIR}/.profile.d
+# cp -n ${LP_DIR}/.profile.d/* ${BUILD_DIR}/.profile.d/
+#
+# if [ -d "$BUILD_DIR/_PublishedWebsites/" ]; then
+#   XSP_CACHE_LOCATION=${CACHE_DIR}/xsp-${XSP_VERSION}
+#   conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/xsp-${XSP_VERSION}.tar.gz ${XSP_CACHE_LOCATION}
+#   cp -r ${XSP_CACHE_LOCATION}/xsp .
+#   cp -r ${XSP_CACHE_LOCATION}/xsp/lib/mono/gac/* ./mono/lib/mono/gac/
+#
+#   NGINX_CACHE_LOCATION=${CACHE_DIR}/nginx-{NGINX_VERSION}
+#   conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/nginx-${NGINX_VERSION}.tar.gz ${NGINX_CACHE_LOCATION}
+#   mkdir -p ${BUILD_DIR}/nginx
+#   cp ${NGINX_CACHE_LOCATION}/nginx ${BUILD_DIR}/nginx/.
+#   cp ${LP_DIR}/nginx/* ${BUILD_DIR}/nginx/.
+# fi
 
 echo "-----> Build SUCCESS"
