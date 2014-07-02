@@ -33,7 +33,7 @@ conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${
 
 # TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
 #
-ln -sFf "${CACHE_DIR}/mono" /app
+# ln -sFf "${MONO_CACHE_LOCATION}/mono" ${BUILD_DIR}
 
 # find a solution file
 SLN=$(find . -maxdepth 1 -iname "*.sln")
@@ -56,8 +56,8 @@ fi
 
 echo "-----> Compiling Mono application"
 
-export PATH="/app/mono/bin:${PATH}"
-export LD_LIBRARY_PATH="/app/mono/lib:${LD_LIBRARY_PATH}"
+export PATH="${MONO_CACHE_LOCATION}/mono/bin/:${PATH}"
+export LD_LIBRARY_PATH="${MONO_CACHE_LOCATION}/mono/lib/:${LD_LIBRARY_PATH}"
 export LP_DIR="${LP_DIR}"
 # Add certs to trust store
 cp -r ${LP_DIR}/.config ~/.
@@ -66,9 +66,12 @@ cp -r ${LP_DIR}/.nuget $(dirname $SLN)/.
 
 
 rm -rf ${LP_DIR}/.nuget/nuget
+chmod a+x ${MONO_CACHE_LOCATION}/mono/bin/mono
+chmod a+x ${MONO_CACHE_LOCATION}/mono/bin/mozroots
+
 echo "#!/bin/sh" >> "${LP_DIR}/.nuget/nuget"
-echo "mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
-echo "mono --runtime=v4.0.30319 --gc=sgen ${LP_DIR}/.nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
+# echo "exec ${MONO_CACHE_LOCATION}/mono/bin/mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
+echo "exec mono --runtime=v4.0.30319 --gc=sgen ${LP_DIR}/.nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
 chmod a+x ${LP_DIR}/.nuget/nuget
 
 ${LP_DIR}/.nuget/nuget restore ${SLN}
