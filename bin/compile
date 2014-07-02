@@ -54,7 +54,7 @@ if [ "${SLN}" == "" ]; then
   exit 1
 fi
 
-if [ ! -d "${LP_DIR}/.nuget/NuGet.exe" ]; then
+if [ ! -f "${LP_DIR}/.nuget/NuGet.exe" ]; then
   echo "-----> Fetching fixed NuGet Bootstrapper"
   NUGET_EXE="http://download-codeplex.sec.s-msft.com/Download/Release?ProjectName=nuget&DownloadId=412077&FileTime=129851621946970000&Build=20911"
   curl -L ${NUGET_EXE} -s -o ${LP_DIR}/.nuget/NuGet.exe
