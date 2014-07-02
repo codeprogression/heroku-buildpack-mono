@@ -78,7 +78,7 @@ cp -r ${LP_DIR}/.nuget $(dirname $SLN)/.
 
 rm -rf ${LP_DIR}/.nuget/nuget
 echo "#!/bin/sh" > "${LP_DIR}/.nuget/nuget"
-echo "exec mono --runtime=v4.0.30319 --gc=sgen ~/.local/share/nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
+echo "exec mono --runtime=v4.0.30319 --gc=sgen ${LP_DIR}/.nuget/NuGet.exe \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
 chmod a+x ${LP_DIR}/.nuget/nuget
 
 mozroots --import --sync
