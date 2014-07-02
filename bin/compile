@@ -25,6 +25,7 @@ function conditional_download() {
 }
 
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
+echo "-----> LP_DIR=${LP_DIR}"
 cd ${BUILD_DIR}
 mkdir -p ${CACHE_DIR}
 
