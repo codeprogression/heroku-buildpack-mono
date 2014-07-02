@@ -41,7 +41,7 @@ ln -sFf "${CACHE_DIR}/mono" /app
 
 #echo "       Copying to /app/"
 #cp -rf "${MONO_CACHE_LOCATION}/mono" /app/. && symlinks -rc /app/.
-cp "${CACHE_DIR}/NuGet.exe" /app
+# cp "${CACHE_DIR}/NuGet.exe" /app
 
 # find a solution file
 SLN=$(find . -maxdepth 1 -iname "*.sln")
