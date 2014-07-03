@@ -75,7 +75,7 @@ export PATH="/app/vendor/mono/bin:${PATH}"
 export LD_LIBRARY_PATH="/app/vendor/mono/lib:${LD_LIBRARY_PATH}"
 
 echo "       Enable mono execution"
-chmod +x mono
+chmod +x /app/vendor/mono/bin/mono
 
 echo "-----> Starting NuGet package restore"
 
