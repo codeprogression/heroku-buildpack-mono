@@ -63,19 +63,18 @@ fi
 echo "-----> Preparing mono"
 
 echo "       Copying mono to build directory"
-mkdir -p ./vendor
-mkdir -p /app/vendor
-# cp -fRH "${MONO_CACHE_LOCATION}/mono/" "./vendor/mono"
+
+cp -R "${MONO_CACHE_LOCATION}/mono" .
 # TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
 # ln -s "$BUILD_DIR/mono" /app
-cp -R "${MONO_CACHE_LOCATION}/mono/" "/app/vendor/mono"
+cp -R "${MONO_CACHE_LOCATION}/mono" /app
 
 echo "       Preparing build paths"
-export PATH="/app/vendor/mono/bin:${PATH}"
-export LD_LIBRARY_PATH="/app/vendor/mono/lib:${LD_LIBRARY_PATH}"
+export PATH="/app/mono/bin:${PATH}"
+export LD_LIBRARY_PATH="/app/mono/lib:${LD_LIBRARY_PATH}"
 
 echo "       Enable mono execution"
-chmod +x /app/vendor/mono/bin/mono
+chmod +x mono
 
 echo "-----> Starting NuGet package restore"
 
