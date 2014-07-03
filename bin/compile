@@ -45,12 +45,14 @@ fi
 
 echo "-----> Retrieving dependencies"
 
-MONO_CACHE_LOCATION=${CACHE_DIR}/mono-${MONO_VERSION}
+NUGET_CACHE_LOCATION="${CACHE_DIR}/nuget/NuGet.exe"
+MONO_CACHE_LOCATION="${CACHE_DIR}/mono-${MONO_VERSION}"
 conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${MONO_CACHE_LOCATION} "mono-${MONO_VERSION}"
 
-NUGET_CACHE_LOCATION=${CACHE_DIR}/NuGet.exe
 if [ ! -f "${NUGET_CACHE_LOCATION}" ]; then
   echo "       Downloading NuGet"
+  rm -rf $(dirname ${NUGET_CACHE_LOCATION})
+  mkdir -p $(dirname ${NUGET_CACHE_LOCATION})
   NUGET_EXE="http://nuget.org/nuget.exe"
   curl -L ${NUGET_EXE} -s -o ${NUGET_CACHE_LOCATION}
   chmod a+x ${NUGET_CACHE_LOCATION}
@@ -63,10 +65,10 @@ echo "-----> Preparing mono"
 echo "       Copying mono to build directory"
 mkdir -p ./vendor
 mkdir -p /app/vendor
-cp -r "${MONO_CACHE_LOCATION}/mono" ./vendor
+# cp -fRH "${MONO_CACHE_LOCATION}/mono/" "./vendor/mono"
 # TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
 # ln -s "$BUILD_DIR/mono" /app
-cp -r "${MONO_CACHE_LOCATION}/mono" /app/vendor
+cp -R "${MONO_CACHE_LOCATION}/mono/" "/app/vendor/mono"
 
 echo "       Preparing build paths"
 export PATH="/app/vendor/mono/bin:${PATH}"
