@@ -87,7 +87,7 @@ rm -rf /app/vendor/nuget
 echo "       Generating NuGet script"
 echo "#!/bin/bash" >> "/app/vendor/nuget"
 echo "mozroots --import --sync" >> "/app/vendor/nuget"
-echo "mono --runtime=v4.0.30319 --gc=sgen \"${NUGET_CACHE_LOCATION} update -self\""
+echo "mono --runtime=v4.0.30319 --gc=sgen ${NUGET_CACHE_LOCATION} update -self" >> "/app/vendor/nuget"
 echo "mono --runtime=v4.0.30319 --gc=sgen \"${NUGET_CACHE_LOCATION}\" \"\$@\"" >> "/app/vendor/nuget"
 chmod a+x /app/vendor/nuget
 
