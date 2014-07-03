@@ -48,14 +48,6 @@ echo "-----> Retrieving dependencies"
 MONO_CACHE_LOCATION=${CACHE_DIR}/mono-${MONO_VERSION}
 conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${MONO_CACHE_LOCATION} "mono-${MONO_VERSION}"
 
-mkdir -p ./vendor
-mkdir -p /app/vendor
-
-cp -r "${MONO_CACHE_LOCATION}/mono" ./vendor
-# TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
-# ln -s "$BUILD_DIR/mono" /app
-cp -r "${MONO_CACHE_LOCATION}/mono" /app/vendor
-
 NUGET_CACHE_LOCATION=${CACHE_DIR}/NuGet.exe
 if [ ! -f "${NUGET_CACHE_LOCATION}" ]; then
   echo "       Downloading NuGet"
@@ -66,17 +58,29 @@ else
   echo "       Using cached copy of NuGet"
 fi
 
-echo "-----> Compiling Mono application"
+echo "-----> Preparing mono"
+
+echo "       Copying mono to build directory"
+mkdir -p ./vendor
+mkdir -p /app/vendor
+cp -r "${MONO_CACHE_LOCATION}/mono" ./vendor
+# TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
+# ln -s "$BUILD_DIR/mono" /app
+cp -r "${MONO_CACHE_LOCATION}/mono" /app/vendor
+
 echo "       Preparing build paths"
 export PATH="/app/vendor/mono/bin:${PATH}"
 export LD_LIBRARY_PATH="/app/vendor/mono/lib:${LD_LIBRARY_PATH}"
+
+echo "       Enable mono execution"
 chmod +x mono
+
+echo "-----> Starting NuGet package restore"
 
 echo "       Adding certs to trusted store"
 cp -r ${LP_DIR}/.config ~/.
 cp -r ${LP_DIR}/.config ${BUILD_DIR}/.
 
-echo "       Preparing NuGet directory"
 rm -rf /app/vendor/nuget
 
 echo "       Generating NuGet script"
@@ -89,7 +93,7 @@ chmod a+x /app/vendor/nuget
 echo "       Restoring NuGet packages"
 /app/vendor/nuget restore ${SLN}
 
-echo "       Building application"
+echo "-----> Building application"
 xbuild /property:Configuration=Release /t:Rebuild ${SLN}
 
 echo "-----> Build SUCCESS"
