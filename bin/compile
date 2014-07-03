@@ -48,23 +48,28 @@ echo "-----> Retrieving dependencies"
 MONO_CACHE_LOCATION=${CACHE_DIR}/mono-${MONO_VERSION}
 conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${MONO_CACHE_LOCATION} "mono-${MONO_VERSION}"
 
-cp -r "${MONO_CACHE_LOCATION}/mono" .
+mkdir -p ./vendor
+mkdir -p /app/vendor
+
+cp -r "${MONO_CACHE_LOCATION}/mono" ./vendor
 # TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
 # ln -s "$BUILD_DIR/mono" /app
-cp -r "${MONO_CACHE_LOCATION}/mono" /app/.
+cp -r "${MONO_CACHE_LOCATION}/mono" /app/vendor
 
-
-if [ ! -f "${LP_DIR}/.nuget/NuGet.exe" ]; then
+NUGET_CACHE_LOCATION=${CACHE_DIR}/NuGet.exe
+if [ ! -f "${NUGET_CACHE_LOCATION}" ]; then
   echo "       Downloading NuGet"
   NUGET_EXE="http://nuget.org/nuget.exe"
-  curl -L ${NUGET_EXE} -s -o ${LP_DIR}/.nuget/NuGet.exe
-  chmod a+x ${LP_DIR}/.nuget/NuGet.exe
+  curl -L ${NUGET_EXE} -s -o ${NUGET_CACHE_LOCATION}
+  chmod a+x ${NUGET_CACHE_LOCATION}
+else
+  echo "       Using cached copy of NuGet"
 fi
 
 echo "-----> Compiling Mono application"
 echo "       Preparing build paths"
-export PATH="/app/mono/bin:${PATH}"
-export LD_LIBRARY_PATH="/app/mono/lib:${LD_LIBRARY_PATH}"
+export PATH="/app/vendor/mono/bin:${PATH}"
+export LD_LIBRARY_PATH="/app/vendor/mono/lib:${LD_LIBRARY_PATH}"
 chmod +x mono
 
 echo "       Adding certs to trusted store"
@@ -72,16 +77,17 @@ cp -r ${LP_DIR}/.config ~/.
 cp -r ${LP_DIR}/.config ${BUILD_DIR}/.
 
 echo "       Preparing NuGet directory"
-rm -rf ${LP_DIR}/.nuget/nuget
+rm -rf /app/vendor/nuget
 
 echo "       Generating NuGet script"
-echo "#!/bin/bash" >> "${LP_DIR}/.nuget/nuget"
-echo "mozroots --import --sync" >> "${LP_DIR}/.nuget/nuget"
-echo "mono --runtime=v4.0.30319 --gc=sgen \"${LP_DIR}/.nuget/NuGet.exe\" \"\$@\"" >> "${LP_DIR}/.nuget/nuget"
-chmod a+x ${LP_DIR}/.nuget/nuget
+echo "#!/bin/bash" >> "/app/vendor/nuget"
+echo "mozroots --import --sync" >> "/app/vendor/nuget"
+echo "mono ${NUGET_CACHE_LOCATION} update -self"
+echo "mono --runtime=v4.0.30319 --gc=sgen \"${NUGET_CACHE_LOCATION}\" \"\$@\"" >> "/app/vendor/nuget/nuget"
+chmod a+x /app/vendor/nuget
 
 echo "       Restoring NuGet packages"
-${LP_DIR}/.nuget/nuget restore ${SLN}
+/app/vendor/nuget restore ${SLN}
 
 echo "       Building application"
 xbuild /property:Configuration=Release /t:Rebuild ${SLN}
