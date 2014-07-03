@@ -89,7 +89,7 @@ echo "       Generating NuGet script"
 echo "#!/bin/bash" >> "/app/vendor/nuget"
 echo "mozroots --import --sync" >> "/app/vendor/nuget"
 echo "mono ${NUGET_CACHE_LOCATION} update -self"
-echo "mono --runtime=v4.0.30319 --gc=sgen \"${NUGET_CACHE_LOCATION}\" \"\$@\"" >> "/app/vendor/nuget/nuget"
+echo "mono --runtime=v4.0.30319 --gc=sgen \"${NUGET_CACHE_LOCATION}\" \"\$@\"" >> "/app/vendor/nuget"
 chmod a+x /app/vendor/nuget
 
 echo "       Restoring NuGet packages"
