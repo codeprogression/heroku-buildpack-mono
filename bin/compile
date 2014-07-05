@@ -27,13 +27,15 @@ function conditional_download() {
 
 
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
+
+cd ${BUILD_DIR}
+rm -rf /app/publish
 mkdir -p ${CACHE_DIR}/build
-cp -R ${BUILD_DIR}/ ${CACHE_DIR}/build
-cd ${CACHE_DIR}/build
+cp -R . ${CACHE_DIR}/build
 
 echo "-----> Finding solution"
 # find a solution file
-SLN=$(find . -maxdepth 1 -iname "*.sln")
+SLN=$(find ${CACHE_DIR}/build -maxdepth 2 -iname "*.sln")
 if [ $( echo "${SLN}" | wc -l ) -gt 1 ]; then
   echo "       Too many *.sln files"
   exit 1
@@ -46,17 +48,17 @@ fi
 
 echo "-----> Retrieving dependencies"
 
-NUGET_CACHE_LOCATION="${CACHE_DIR}/nuget/NuGet.exe"
+NUGET_CACHE_LOCATION="${CACHE_DIR}/nuget/"
 MONO_CACHE_LOCATION="${CACHE_DIR}/mono-${MONO_VERSION}"
 conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${MONO_CACHE_LOCATION} "mono-${MONO_VERSION}"
 
-if [ ! -f "${NUGET_CACHE_LOCATION}" ]; then
+if [ ! -f "${NUGET_CACHE_LOCATION}/NuGet.exe" ]; then
   echo "       Downloading NuGet"
-  rm -rf $(dirname ${NUGET_CACHE_LOCATION})
-  mkdir -p $(dirname ${NUGET_CACHE_LOCATION})
+  rm -rf ${NUGET_CACHE_LOCATION}
+  mkdir -p ${NUGET_CACHE_LOCATION}
   NUGET_EXE="http://nuget.org/nuget.exe"
-  curl -L ${NUGET_EXE} -s -o ${NUGET_CACHE_LOCATION}
-  chmod a+x ${NUGET_CACHE_LOCATION}
+  curl -L ${NUGET_EXE} -s -o "${NUGET_CACHE_LOCATION}/NuGet.exe"
+  chmod a+x "${NUGET_CACHE_LOCATION}/NuGet.exe"
 else
   echo "       Using cached copy of NuGet"
 fi
@@ -84,24 +86,24 @@ cp -r ${LP_DIR}/.config ~/.
 cp -r ${LP_DIR}/.config ${BUILD_DIR}/.
 cp -r ${LP_DIR}/.config ${CACHE_DIR}/build/.
 
-rm -rf /app/vendor/nuget
+rm -rf ${NUGET_CACHE_LOCATION}/nuget
 
 echo "       Generating NuGet script"
-echo "#!/bin/bash" >> "/app/vendor/nuget"
-echo "mozroots --import --sync" >> "/app/vendor/nuget"
-echo "mono --runtime=v4.0.30319 --gc=sgen ${NUGET_CACHE_LOCATION} update -self" >> "/app/vendor/nuget"
-echo "mono --runtime=v4.0.30319 --gc=sgen \"${NUGET_CACHE_LOCATION}\" \"\$@\"" >> "/app/vendor/nuget"
-chmod a+x /app/vendor/nuget
+echo "#!/bin/bash" >> "${NUGET_CACHE_LOCATION}/nuget"
+echo "mozroots --import --sync" >> "${NUGET_CACHE_LOCATION}/nuget"
+echo "mono --runtime=v4.0.30319 --gc=sgen ${NUGET_CACHE_LOCATION}/NuGet.exe update -self" >> "${NUGET_CACHE_LOCATION}/nuget"
+echo "mono --runtime=v4.0.30319 --gc=sgen \"${NUGET_CACHE_LOCATION}/NuGet.exe\" \"\$@\"" >> "${NUGET_CACHE_LOCATION}/nuget"
+chmod a+x ${NUGET_CACHE_LOCATION}/nuget
 
 echo "       Restoring NuGet packages"
-/app/vendor/nuget restore ${SLN}
+${NUGET_CACHE_LOCATION}/nuget restore ${SLN}
 
 echo "-----> Building application"
 xbuild /property:Configuration=Release /t:Rebuild ${SLN}
 
 echo "-----> Moving to publish directory"
-rm -rf ${BUILD_DIR}/publish
 mkdir -p ${BUILD_DIR}/publish
-cp -R ${CACHE_DIR}/build ${BUILD_DIR}/publish
+cd ${CACHE_DIR}/build
+cp -R . ${BUILD_DIR}/publish
 
 echo "-----> Build SUCCESS"
