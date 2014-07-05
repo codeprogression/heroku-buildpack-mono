@@ -27,8 +27,9 @@ function conditional_download() {
 
 
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
-cd ${BUILD_DIR}
-mkdir -p ${CACHE_DIR}
+mkdir -p ${CACHE_DIR}/build
+cp -R ${BUILD_DIR}/ ${CACHE_DIR}/build
+cd ${CACHE_DIR}/build
 
 echo "-----> Finding solution"
 # find a solution file
@@ -81,6 +82,7 @@ echo "-----> Starting NuGet package restore"
 echo "       Adding certs to trusted store"
 cp -r ${LP_DIR}/.config ~/.
 cp -r ${LP_DIR}/.config ${BUILD_DIR}/.
+cp -r ${LP_DIR}/.config ${CACHE_DIR}/build/.
 
 rm -rf /app/vendor/nuget
 
@@ -96,5 +98,10 @@ echo "       Restoring NuGet packages"
 
 echo "-----> Building application"
 xbuild /property:Configuration=Release /t:Rebuild ${SLN}
+
+echo "-----> Moving to publish directory"
+rm -rf ${BUILD_DIR}/publish
+mkdir -p ${BUILD_DIR}/publish
+cp -R ${CACHE_DIR}/build ${BUILD_DIR}/publish
 
 echo "-----> Build SUCCESS"
