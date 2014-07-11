@@ -104,6 +104,12 @@ xbuild /property:Configuration=Release /t:Rebuild ${SLN}
 echo "-----> Moving to publish directory"
 mkdir -p ${BUILD_DIR}/publish
 cd ${CACHE_DIR}/build
-cp -R . ${BUILD_DIR}/publish
+mv -f ${BUILD_DIR}/mono ${BUILD_DIR}/.mono
+cp -R . ${BUILD_DIR}/.publish
+
+echo "-----> Cleaning up"
+rm -rf ${BUILD_DIR}/*
+mv -f ${BUILD_DIR}/.mono ${BUILD_DIR}/mono
+mv -f ${BUILD_DIR}/.publish ${BUILD_DIR}/publish
 
 echo "-----> Build SUCCESS"
