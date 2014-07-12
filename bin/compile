@@ -10,6 +10,8 @@ MONO_VERSION=${MONO_VERSION:-"3.2.8"}
 BUILD_DIR=$1
 CACHE_DIR=$2
 
+rm -rf ${BUILD_DIR}/publish
+
 function conditional_download() {
   DOWNLOAD_URL="$1"
   DESTINATION="$2"
@@ -29,7 +31,6 @@ function conditional_download() {
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
 
 cd ${BUILD_DIR}
-rm -rf /app/publish
 mkdir -p ${CACHE_DIR}/build
 cp -R . ${CACHE_DIR}/build
 
@@ -105,11 +106,13 @@ echo "-----> Moving to publish directory"
 mkdir -p ${BUILD_DIR}/publish
 cd ${CACHE_DIR}/build
 mv -f ${BUILD_DIR}/mono ${BUILD_DIR}/.mono
+mv -f ${BUILD_DIR}/Procfile ${BUILD_DIR}/.Procfile
 cp -R . ${BUILD_DIR}/.publish
 
 echo "-----> Cleaning up"
 rm -rf ${BUILD_DIR}/*
 mv -f ${BUILD_DIR}/.mono ${BUILD_DIR}/mono
+mv -f ${BUILD_DIR}/.Procfile ${BUILD_DIR}/Procfile
 mv -f ${BUILD_DIR}/.publish ${BUILD_DIR}/publish
 
 echo "-----> Build SUCCESS"
