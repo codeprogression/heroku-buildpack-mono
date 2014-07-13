@@ -4,8 +4,8 @@
 # fail fast
 set -e
 
-DEPENDENCY_S3_BUCKET_PATH=${DEPENDENCY_S3_BUCKET_PATH:-"http://s3.amazonaws.com/cp-mono-dependencies"}
-MONO_VERSION=${MONO_VERSION:-"3.4.0"}
+DEPENDENCY_S3_BUCKET_PATH=${DEPENDENCY_S3_BUCKET_PATH:-"http://s3.amazonaws.com/mono-dependencies"}
+MONO_VERSION=${MONO_VERSION:-"3.2.8"}
 
 BUILD_DIR=$1
 CACHE_DIR=$2
@@ -31,6 +31,7 @@ function conditional_download() {
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
 
 cd ${BUILD_DIR}
+rm -rf ${CACHE_DIR}/build
 mkdir -p ${CACHE_DIR}/build
 cp -R . ${CACHE_DIR}/build
 
