@@ -4,11 +4,14 @@
 # fail fast
 set -e
 
-DEPENDENCY_S3_BUCKET_PATH=${DEPENDENCY_S3_BUCKET_PATH:-"http://s3.amazonaws.com/mono-dependencies"}
-MONO_VERSION=${MONO_VERSION:-"3.2.8"}
+DEPENDENCY_S3_BUCKET_PATH=${DEPENDENCY_S3_BUCKET_PATH:-"https://s3.amazonaws.com/nancy-buildpack-mono"}
+MONO_VERSION=${MONO_VERSION:-"3.12.1"}
 
 BUILD_DIR=$1
 CACHE_DIR=$2
+
+echo "BUILD_DIR: ${BUILD_DIR}"
+echo "CACHE_DIR: ${CACHE_DIR}"
 
 rm -rf ${BUILD_DIR}/publish
 
@@ -20,7 +23,7 @@ function conditional_download() {
   if [ ! -d ${DESTINATION} ]; then
     rm -rf ${DESTINATION}
     mkdir -p ${DESTINATION}
-    echo "       Downloading ${FRIENDLY_NAME}"
+    echo "       Downloading ${FRIENDLY_NAME} (at ${DOWNLOAD_URL})"
     curl -L ${DOWNLOAD_URL} -s | tar xz -C ${DESTINATION}
   else
     echo "       Using cached copy of ${FRIENDLY_NAME}"
@@ -50,7 +53,7 @@ fi
 
 echo "-----> Retrieving dependencies"
 
-NUGET_CACHE_LOCATION="${CACHE_DIR}/nuget/"
+NUGET_CACHE_LOCATION="${CACHE_DIR}/nuget"
 MONO_CACHE_LOCATION="${CACHE_DIR}/mono-${MONO_VERSION}"
 conditional_download ${DEPENDENCY_S3_BUCKET_PATH}/mono-${MONO_VERSION}.tar.gz ${MONO_CACHE_LOCATION} "mono-${MONO_VERSION}"
 
@@ -58,7 +61,7 @@ if [ ! -f "${NUGET_CACHE_LOCATION}/NuGet.exe" ]; then
   echo "       Downloading NuGet"
   rm -rf ${NUGET_CACHE_LOCATION}
   mkdir -p ${NUGET_CACHE_LOCATION}
-  NUGET_EXE="http://nuget.org/nuget.exe"
+  NUGET_EXE="https://nuget.org/nuget.exe"
   curl -L ${NUGET_EXE} -s -o "${NUGET_CACHE_LOCATION}/NuGet.exe"
   chmod a+x "${NUGET_CACHE_LOCATION}/NuGet.exe"
 else
@@ -67,7 +70,7 @@ fi
 
 echo "-----> Preparing mono"
 
-echo "       Copying mono to build directory"
+echo "       Copying mono to build directory (${MONO_CACHE_LOCATION}/mono)"
 
 cp -R "${MONO_CACHE_LOCATION}/mono" .
 # TODO: this is done because `ln -s` causes nuget to fail in subtle ways. Fix please
@@ -93,8 +96,8 @@ rm -rf ${NUGET_CACHE_LOCATION}/nuget
 echo "       Generating NuGet script"
 echo "#!/bin/bash" >> "${NUGET_CACHE_LOCATION}/nuget"
 echo "mozroots --import --sync" >> "${NUGET_CACHE_LOCATION}/nuget"
-echo "mono --runtime=v4.0.30319 --gc=sgen ${NUGET_CACHE_LOCATION}/NuGet.exe update -self" >> "${NUGET_CACHE_LOCATION}/nuget"
-echo "mono --runtime=v4.0.30319 --gc=sgen \"${NUGET_CACHE_LOCATION}/NuGet.exe\" \"\$@\"" >> "${NUGET_CACHE_LOCATION}/nuget"
+echo "mono --runtime=v4.0.30319 ${NUGET_CACHE_LOCATION}/NuGet.exe update -self" >> "${NUGET_CACHE_LOCATION}/nuget"
+echo "mono --runtime=v4.0.30319 \"${NUGET_CACHE_LOCATION}/NuGet.exe\" \"\$@\"" >> "${NUGET_CACHE_LOCATION}/nuget"
 chmod a+x ${NUGET_CACHE_LOCATION}/nuget
 
 echo "       Restoring NuGet packages"
