@@ -5,7 +5,7 @@
 set -e
 
 DEPENDENCY_S3_BUCKET_PATH=${DEPENDENCY_S3_BUCKET_PATH:-"https://s3.amazonaws.com/nancy-buildpack-mono"}
-MONO_VERSION=${MONO_VERSION:-"3.12.1"}
+MONO_VERSION=${MONO_VERSION:-"3.2.8"}
 
 BUILD_DIR=$1
 CACHE_DIR=$2
